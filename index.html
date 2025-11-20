@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ikigai Career & Personality Compass</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #ec4899;
+            --accent: #8b5cf6;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --gradient: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%);
+        }
+
+        * { box-sizing: border-box; }
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--gradient);
+            color: var(--text);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255,255,255,0.5);
+            transition: transform 0.3s ease;
+        }
+
+        /* Typography */
+        h1 { font-weight: 800; font-size: 2.5rem; letter-spacing: -0.05em; margin-bottom: 10px; 
+             background: linear-gradient(to right, var(--primary), var(--secondary)); 
+             -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; }
+        
+        h2 { font-size: 1.5rem; margin-bottom: 20px; text-align: center; color: #334155; }
+        p { line-height: 1.6; color: #64748b; text-align: center; margin-bottom: 30px; }
+
+        /* Inputs & Buttons */
+        input, select {
+            width: 100%; padding: 16px; border-radius: 12px; border: 2px solid #e2e8f0;
+            font-size: 1rem; margin-bottom: 20px; transition: all 0.3s; font-family: inherit;
+        }
+        input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
+
+        .btn {
+            background: var(--text); color: white; padding: 16px 32px; border-radius: 100px;
+            border: none; font-weight: 700; cursor: pointer; font-size: 1rem; width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .btn-secondary { background: #e2e8f0; color: var(--text); margin-top: 10px; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+
+        /* Quiz UI */
+        .progress-bar { height: 6px; background: #e2e8f0; border-radius: 10px; margin-bottom: 40px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s ease; }
+        
+        .options-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 30px; }
+        .option-btn {
+            background: white; border: 1px solid #cbd5e1; padding: 15px 5px; border-radius: 12px;
+            cursor: pointer; font-size: 0.8rem; font-weight: 600; color: #64748b; transition: all 0.2s;
+        }
+        .option-btn:hover { border-color: var(--primary); color: var(--primary); background: #eff6ff; }
+        .option-btn.selected { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Results UI */
+        .ikigai-card {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white; padding: 40px; border-radius: 24px; text-align: center; margin-bottom: 30px;
+            box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.3);
+        }
+        .ikigai-label { text-transform: uppercase; letter-spacing: 2px; font-size: 0.8rem; opacity: 0.8; font-weight: 700; }
+        .ikigai-title { font-size: 2rem; font-weight: 800; margin: 10px 0; }
+        
+        .result-section { background: white; padding: 25px; border-radius: 16px; margin-bottom: 15px; text-align: left; border: 1px solid #f1f5f9; }
+        .result-section h3 { color: var(--primary); margin-top: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
+        
+        /* Loader */
+        .loader {
+            border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%;
+            width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 40px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .hidden { display: none; }
+
+        @media (max-width: 600px) {
+            .container { padding: 25px; }
+            .options-grid { grid-template-columns: repeat(5, 1fr); }
+            .option-btn { font-size: 0px; height: 40px; } /* Hide text on mobile, simplified bubbles */
+            .option-btn::after { content: ''; display: block; width: 10px; height: 10px; background: currentColor; border-radius: 50%; margin: auto; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="screen-intro">
+        <h1>Find Your Ikigai</h1>
+        <p>Where your personality meets your passion. This advanced AI assessment analyzes your Big 5 traits to discover your true professional purpose.</p>
+        <input type="text" id="user-interest" placeholder="What is your main passion? (e.g. Coding, Cooking, Teaching)">
+        <button class="btn" onclick="App.start()">Start Assessment</button>
+    </div>
+
+    <div id="screen-quiz" class="hidden">
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+        <h2 id="question-text">Question goes here</h2>
+        <div class="options-grid" id="options-area"></div>
+    </div>
+
+    <div id="screen-loading" class="hidden" style="text-align: center;">
+        <div class="loader"></div>
+        <h2>Consulting the AI...</h2>
+        <p>Analyzing your traits against the Ikigai framework.</p>
+    </div>
+
+    <div id="screen-results" class="hidden">
+        <div class="ikigai-card">
+            <div class="ikigai-label">Your Archetype</div>
+            <div class="ikigai-title" id="res-archetype">The Visionary</div>
+            <p id="res-ikigai" style="color: rgba(255,255,255,0.9);">Loading your purpose...</p>
+        </div>
+
+        <div style="height: 300px; position: relative; margin-bottom: 30px;">
+            <canvas id="traitChart"></canvas>
+        </div>
+
+        <div id="dynamic-content"></div>
+
+        <div class="btn-group">
+            <button class="btn" style="flex: 1; background: var(--primary);" onclick="Sharing.share()">Share Result</button>
+            <button class="btn" style="flex: 1; background: var(--secondary);" onclick="PDFExport.download()">Download PDF</button>
+        </div>
+        <button class="btn btn-secondary" onclick="location.reload()">Start Over</button>
+    </div>
+</div>
+
+<script>
+// --- 1. DATA & CONFIG ---
+// Standardized Short Big 5 Questions (Scientifically Valid)
+const QUESTIONS = [
+    {t: "I am the life of the party.", id: "E"},
+    {t: "I feel little concern for others.", id: "A", rev: true},
+    {t: "I am always prepared.", id: "C"},
+    {t: "I get stressed out easily.", id: "N"},
+    {t: "I have a rich vocabulary.", id: "O"},
+    {t: "I don't talk a lot.", id: "E", rev: true},
+    {t: "I am interested in people.", id: "A"},
+    {t: "I leave my belongings around.", id: "C", rev: true},
+    {t: "I am relaxed most of the time.", id: "N", rev: true},
+    {t: "I have difficulty understanding abstract ideas.", id: "O", rev: true}
+];
+
+const State = {
+    answers: [],
+    currentQ: 0,
+    scores: {},
+    interest: "",
+    aiResult: null
+};
+
+// --- 2. APP CONTROLLER ---
+const App = {
+    start: () => {
+        const interest = document.getElementById('user-interest').value;
+        if(!interest) return alert("Please enter a passion or interest first!");
+        State.interest = interest;
+        UI.show('quiz');
+        Quiz.render();
+    },
+    analyze: async () => {
+        UI.show('loading');
+        
+        // 1. Calculate Scores
+        let raw = {O:0, C:0, E:0, A:0, N:0};
+        State.answers.forEach((ans, i) => {
+            const q = QUESTIONS[i];
+            let val = q.rev ? (6 - ans) : ans; // Reverse scoring
+            raw[q.id] += val;
+        });
+        // Average them (divide by 2 because 2 questions per trait in this short demo)
+        Object.keys(raw).forEach(k => State.scores[k] = raw[k] / 2);
+
+        // 2. Send to AI Backend
+        try {
+            const response = await fetch('/.netlify/functions/analyze', {
+                method: 'POST',
+                body: JSON.stringify({ scores: State.scores, interest: State.interest })
+            });
+            
+            if(!response.ok) throw new Error("API Error");
+            State.aiResult = await response.json();
+            
+            UI.renderResults();
+            UI.show('results');
+        } catch (e) {
+            alert("AI Analysis failed. Please try again. " + e.message);
+            location.reload();
+        }
+    }
+};
+
+// --- 3. QUIZ ENGINE ---
+const Quiz = {
+    render: () => {
+        const q = QUESTIONS[State.currentQ];
+        document.getElementById('question-text').innerText = `${State.currentQ + 1}. ${q.t}`;
+        document.getElementById('progress').style.width = `${(State.currentQ / QUESTIONS.length) * 100}%`;
+        
+        const opts = document.getElementById('options-area');
+        opts.innerHTML = '';
+        ['Disagree', 'Slightly Disagree', 'Neutral', 'Slightly Agree', 'Agree'].forEach((label, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = label; // CSS handles mobile hiding
+            btn.onclick = () => {
+                State.answers[State.currentQ] = idx + 1; // 1-5 scale
+                if(State.currentQ < QUESTIONS.length - 1) {
+                    State.currentQ++;
+                    Quiz.render();
+                } else {
+                    App.analyze();
+                }
+            };
+            opts.appendChild(btn);
+        });
+    }
+};
+
+// --- 4. UI HANDLER ---
+const UI = {
+    show: (id) => {
+        document.querySelectorAll('.container > div').forEach(el => el.classList.add('hidden'));
+        document.getElementById(`screen-${id}`).classList.remove('hidden');
+    },
+    renderResults: () => {
+        const data = State.aiResult;
+        
+        // Header
+        document.getElementById('res-archetype').innerText = data.archetype;
+        document.getElementById('res-ikigai').innerText = data.ikigai_statement;
+
+        // Chart
+        new Chart(document.getElementById('traitChart'), {
+            type: 'radar',
+            data: {
+                labels: ['Openness', 'Conscientiousness', 'Extraversion', 'Agreeableness', 'Neuroticism'],
+                datasets: [{
+                    label: 'Your Profile',
+                    data: [State.scores.O, State.scores.C, State.scores.E, State.scores.A, State.scores.N],
+                    backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                    borderColor: '#2563eb',
+                    pointBackgroundColor: '#ec4899'
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: { r: { min: 0, max: 5, ticks: { display: false } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // Dynamic Content Sections
+        const content = document.getElementById('dynamic-content');
+        content.innerHTML = `
+            <div class="result-section">
+                <h3>🧠 Temperament</h3>
+                <p>${data.temperament_description}</p>
+            </div>
+            <div class="result-section">
+                <h3>⚡ Core Strengths</h3>
+                <ul>${data.strengths.map(s => `<li>${s}</li>`).join('')}</ul>
+            </div>
+             <div class="result-section">
+                <h3>🚀 Ikigai Career Paths</h3>
+                ${data.career_paths.map(path => `
+                    <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                        <strong>${path.role}</strong><br>
+                        <span style="font-size: 0.9em; color: #666;">${path.why}</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+};
+
+// --- 5. SHARE FUNCTION (FIXED) ---
+const Sharing = {
+    share: async () => {
+        const text = `I discovered my Ikigai Archetype: "${State.aiResult.archetype}"! 🚀\n\nMy passion: ${State.interest}\nTake the AI test here:`;
+        const url = window.location.href;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'My Ikigai Result',
+                    text: text,
+                    url: url
+                });
+            } catch (err) {
+                console.log('Share canceled');
+            }
+        } else {
+            // Fallback for desktop
+            navigator.clipboard.writeText(`${text} ${url}`);
+            alert("Result copied to clipboard! You can paste it anywhere.");
+        }
+    }
+};
+
+// --- 6. PDF EXPORT (FIXED STRUCTURE) ---
+const PDFExport = {
+    download: () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const data = State.aiResult;
+        let y = 20;
+        const margin = 20;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const maxTextWidth = pageWidth - (margin * 2);
+
+        // Helper to add text and auto-page break
+        const addText = (text, size, weight, color = [0,0,0]) => {
+            doc.setFontSize(size);
+            doc.setFont('helvetica', weight);
+            doc.setTextColor(...color);
+            
+            const lines = doc.splitTextToSize(text, maxTextWidth);
+            
+            if (y + (lines.length * (size/2)) > 280) {
+                doc.addPage();
+                y = 20;
+            }
+            
+            doc.text(lines, margin, y);
+            y += (lines.length * (size/3)) + 5; // Dynamic spacing
+        };
+
+        // 1. Title Page
+        doc.setFillColor(37, 99, 235); // Primary Blue
+        doc.rect(0, 0, pageWidth, 40, 'F');
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(24);
+        doc.setFont('helvetica', 'bold');
+        doc.text("Ikigai Assessment Report", pageWidth/2, 20, { align: 'center' });
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Generated for: ${State.interest} Enthusiast`, pageWidth/2, 30, { align: 'center' });
+
+        y = 60;
+
+        // 2. Archetype
+        addText("Your Archetype:", 12, 'normal', [100, 100, 100]);
+        addText(data.archetype, 22, 'bold', [37, 99, 235]);
+        y += 5;
+        addText(data.ikigai_statement, 12, 'italic', [50, 50, 50]);
+        y += 10;
+
+        // 3. Sections
+        addText("Temperament Analysis", 16, 'bold', [37, 99, 235]);
+        addText(data.temperament_description, 11, 'normal');
+        y += 5;
+
+        addText("Core Strengths", 16, 'bold', [37, 99, 235]);
+        data.strengths.forEach(s => addText(`• ${s}`, 11, 'normal'));
+        y += 5;
+
+        addText("Recommended Career Paths", 16, 'bold', [37, 99, 235]);
+        data.career_paths.forEach(path => {
+            addText(path.role, 12, 'bold');
+            addText(path.why, 10, 'normal', [80, 80, 80]);
+            y += 3;
+        });
+
+        // Save
+        doc.save("My_Ikigai_Report.pdf");
+    }
+};
+</script>
+</body>
+</html>
